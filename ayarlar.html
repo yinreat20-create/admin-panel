@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Ayarları - Silopi Sahibinden</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-location-dot"></i>
+                <h2>SİLOPİ <span>SAHİBİNDEN</span></h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> Ana Sayfa</a></li>
+                <li><a href="ilanlar.html"><i class="fa-solid fa-list"></i> İlanlar</a></li>
+                <li><a href="ilan-ekle.html"><i class="fa-solid fa-plus-circle"></i> Yeni İlan Ekle</a></li>
+                <li><a href="kullanicilar.html"><i class="fa-solid fa-users"></i> Kullanıcılar</a></li>
+                <li><a href="mesajlar.html"><i class="fa-solid fa-envelope"></i> Mesajlar</a></li>
+                <li><a href="favoriler.html"><i class="fa-solid fa-heart"></i> Favoriler</a></li>
+                <li><a href="raporlar.html"><i class="fa-solid fa-chart-line"></i> Raporlar</a></li>
+                <li class="active"><a href="ayarlar.html"><i class="fa-solid fa-gear"></i> Site Ayarları</a></li>
+                <li class="logout"><a href="#" id="logoutBtn"><i class="fa-solid fa-sign-out-alt"></i> Çıkış Yap</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <button id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+                    <h2 class="page-title">Genel Site Ayarları</h2>
+                </div>
+                <div class="nav-right">
+                    <div class="profile-menu">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=0f172a&color=fff" alt="Admin">
+                        <span>Yönetici</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="content-wrapper">
+                <div class="chart-card" style="max-width: 700px;">
+                    <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">Platform Yapılandırması</h3>
+                    <form id="ayarlarForm">
+                        <div class="form-group">
+                            <label>Site Başlığı (Title)</label>
+                            <input type="text" value="Silopi Sahibinden - Emlak ve Vasıta İlan Platformu" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                        </div>
+                        <div class="form-group">
+                            <label>İletişim Telefon Numarası</label>
+                            <input type="text" placeholder="05xx xxx xx xx" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                        </div>
+                        <div class="form-group">
+                            <label>Destek E-posta Adresi</label>
+                            <input type="email" value="info@silopisahibinden.com" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                        </div>
+                        <div class="form-group">
+                            <label>Bakım Modu</label>
+                            <select style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                                <option>Kapalı (Site Aktif)</option>
+                                <option>Açık (Site Bakımda)</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn-primary" style="margin-top: 10px;">Ayarları Kaydet</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
