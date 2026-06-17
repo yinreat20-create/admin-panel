@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // LOCALSTORAGE GEÇİCİ VERİ TABANI ALTYAPISI
     let ilanlar = JSON.parse(localStorage.getItem('ilanlar')) || [];
     let yuklenenFotograflar = [];
-
     // === 3. ÇOKLU FOTOĞRAF YÜKLEME VE ÖNİZLEME ===
     const photoInput = document.getElementById('photoInput');
     const previewGrid = document.getElementById('previewGrid');
@@ -56,20 +55,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Eski önizlemeleri temizle ve garantili görünüm için stilleri JavaScript'ten ver
             previewGrid.innerHTML = ''; 
+            previewGrid.style.display = "flex";
+            previewGrid.style.flexWrap = "wrap";
+            previewGrid.style.gap = "10px";
+            previewGrid.style.marginTop = "15px";
             yuklenenFotograflar = []; 
+
+            if(files.length > 0) {
+                // Yüklendiğine dair yeşil onay yazısı ve ikon
+                const baslik = document.createElement('div');
+                baslik.style = "width: 100%; font-weight: 600; color: #16a34a; margin-bottom: 5px; font-size: 0.95rem;";
+                baslik.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${files.length} fotoğraf başarıyla yüklendi!`;
+                previewGrid.appendChild(baslik);
+            }
 
             files.forEach(file => {
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = function(event) {
-                        // Önizleme kutusunu ekrana bas
+                        // Fotoğrafı küçük şık bir kare (thumbnail) olarak ekrana bas
                         const img = document.createElement('img');
                         img.src = event.target.result;
-                        img.className = 'preview-item';
+                        img.style = "width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);";
                         previewGrid.appendChild(img);
                         
-                        // Fotoğraf verisini hafızaya kaydet
+                        // Fotoğrafı ilan kayıt dizisine gönder
                         yuklenenFotograflar.push(event.target.result);
                     }
                     reader.readAsDataURL(file);
@@ -77,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    
 
     // === 4. İLAN KAYDETME VE YAYINLAMA SİSTEMİ ===
     const ilanForm = document.getElementById('ilanForm');
