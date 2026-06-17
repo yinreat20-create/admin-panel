@@ -46,17 +46,17 @@
                     <form id="ilanForm">
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label>İlan Başlığı</label>
-                            <input type="text" class="form-control" placeholder="Örn: Sahibinden Satılık 3+1 Lüks Daire" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;">
+                            <input type="text" id="ilanBaslik" class="form-control" placeholder="Örn: Sahibinden Satılık 3+1 Lüks Daire" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;" required>
                         </div>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                             <div class="form-group">
                                 <label>Fiyat (₺)</label>
-                                <input type="number" class="form-control" placeholder="Örn: 1500000" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;">
+                                <input type="number" id="ilanFiyat" class="form-control" placeholder="Örn: 1500000" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;" required>
                             </div>
                             <div class="form-group">
                                 <label>Kategori</label>
-                                <select class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">
+                                <select id="ilanKategori" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">
                                     <option>Emlak</option>
                                     <option>Vasıta</option>
                                     <option>İkinci El ve Sıfır Alışveriş</option>
@@ -67,17 +67,17 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                             <div class="form-group">
                                 <label>İlan Sahibi / Kullanıcı İsmi</label>
-                                <input type="text" class="form-control" placeholder="Örn: Mehmet Can" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;">
+                                <input type="text" id="ilanSahibi" class="form-control" placeholder="Örn: Mehmet Can" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;" required>
                             </div>
                             <div class="form-group">
                                 <label>İletişim Telefonu</label>
-                                <input type="tel" class="form-control" placeholder="Örn: 05xx xxx xx xx" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;">
+                                <input type="tel" id="ilanTelefon" class="form-control" placeholder="Örn: 05xx xxx xx xx" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;" required>
                             </div>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label>Kullanıcı ve İletişim Bilgileri Gizlensin mi?</label>
-                            <select class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">
+                            <select id="ilanGizlilik" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">
                                 <option value="public">Hayır, Herkese Açık Olsun (Önerilen)</option>
                                 <option value="private">Evet, Gizli Olsun (Sadece Admin Görebilir)</option>
                             </select>
@@ -89,17 +89,17 @@
                                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--primary); margin-bottom: 10px;"></i>
                                 <h3>Fotoğraf Yüklemek İçin Tıklayın</h3>
                                 <p>Cihazınızdan en fazla 20 adet fotoğraf seçebilirsiniz.</p>
-                                <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
                             </div>
+                            <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
                             <div id="previewGrid" class="preview-grid"></div>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 25px;">
                             <label>İlan Açıklaması</label>
-                            <textarea rows="5" placeholder="İlan detaylarını buraya yazın..." style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; resize: vertical;"></textarea>
+                            <textarea id="ilanAciklama" rows="5" placeholder="İlan detaylarını buraya yazın..." style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; resize: vertical;" required></textarea>
                         </div>
 
-                        <button type="button" class="btn-primary" style="padding: 14px;">İlanı Kaydet ve Yayınla</button>
+                        <button type="submit" class="btn-primary" style="padding: 14px; width: 100%;">İlanı Kaydet ve Yayınla</button>
                     </form>
                 </div>
             </div>
