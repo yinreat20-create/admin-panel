@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raporlar - Silopi Sahibinden</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-location-dot"></i>
+                <h2>SİLOPİ <span>SAHİBİNDEN</span></h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> Ana Sayfa</a></li>
+                <li><a href="ilanlar.html"><i class="fa-solid fa-list"></i> İlanlar</a></li>
+                <li><a href="ilan-ekle.html"><i class="fa-solid fa-plus-circle"></i> Yeni İlan Ekle</a></li>
+                <li><a href="kullanicilar.html"><i class="fa-solid fa-users"></i> Kullanıcılar</a></li>
+                <li><a href="mesajlar.html"><i class="fa-solid fa-envelope"></i> Mesajlar</a></li>
+                <li><a href="favoriler.html"><i class="fa-solid fa-heart"></i> Favoriler</a></li>
+                <li class="active"><a href="raporlar.html"><i class="fa-solid fa-chart-line"></i> Raporlar</a></li>
+                <li><a href="ayarlar.html"><i class="fa-solid fa-gear"></i> Site Ayarları</a></li>
+                <li class="logout"><a href="#" id="logoutBtn"><i class="fa-solid fa-sign-out-alt"></i> Çıkış Yap</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <button id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+                    <h2 class="page-title">Sistem Raporları</h2>
+                </div>
+                <div class="nav-right">
+                    <div class="profile-menu">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=0f172a&color=fff" alt="Admin">
+                        <span>Yönetici</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="content-wrapper">
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e0f2fe; color: #0284c7;"><i class="fa-solid fa-fire"></i></div>
+                        <div class="stat-info">
+                            <p>En Çok Popüler Kategori</p>
+                            <h3>Emlak (Daire)</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #dcfce7; color: #16a34a;"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <div class="stat-info">
+                            <p>Haftalık İlan Artış Oranı</p>
+                            <h3>%0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card" style="margin-top: 20px; padding: 30px; text-align: center; color: var(--text-light);">
+                    <i class="fa-solid fa-file-invoice-dollar" style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"></i>
+                    <h3>Detaylı Grafik Raporları</h3>
+                    <p style="font-size: 0.9rem; margin-top: 5px;">Firebase entegrasyonu tamamlandığında canlı veriler bu panel üzerinde listelenecektir.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
