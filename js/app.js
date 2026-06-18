@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // HTML Tablo Satırı Oluşturucu Şablon
+        // HTML Tablo Satırı Oluşturucu Şablon (Kalem butonu eklendi)
     function tabloSatiriOlustur(ilan) {
         let durumClass = 'status-active';
         if (ilan.durum === 'Pasif') durumClass = 'status-passive';
@@ -154,6 +154,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${ilan.tarih}</td>
                 <td><span class="badge-status ${durumClass}">${ilan.durum}</span></td>
                 <td>
+                    <button class="btn-duzenle" data-id="${ilan.id}" style="background: none; border: none; color: #0284c7; cursor: pointer; font-size: 1.1rem; margin-right: 12px;" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                    
                     <button class="btn-sil" data-id="${ilan.id}" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.1rem;" title="Sil"><i class="fa-solid fa-trash"></i></button>
                 </td>
             </tr>
