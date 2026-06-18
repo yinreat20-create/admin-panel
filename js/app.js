@@ -1,35 +1,32 @@
+// Firebase v9 Modüler SDK Kurulumu (CDN üzerinden)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// Senin Firebase Kimlik Bilgilerin
+const firebaseConfig = {
+  apiKey: "AIzaSyDHWz3bkBBshmV5nTDYCRBV6ve1bH-5AIY",
+  authDomain: "silopisahibinden.firebaseapp.com",
+  projectId: "silopisahibinden",
+  storageBucket: "silopisahibinden.firebasestorage.app",
+  messagingSenderId: "483281109347",
+  appId: "1:483281109347:web:e1a348344d209338b09356",
+  measurementId: "G-73EPRFHRSR"
+};
+
+// Firebase'i Başlat
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
 document.addEventListener('DOMContentLoaded', function() {
     
-    // === 1. GİRİŞ İŞLEMİ (LOGIN) ===
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('errorMessage');
-
-            if (email === 'admin@admin.com' && password === '123456') {
-                window.location.href = 'dashboard.html';
-            } else {
-                errorMsg.textContent = 'Hatalı e-posta veya şifre!';
-                errorMsg.style.display = 'block';
-            }
-        });
-    }
-
-    // === 2. GENEL SİSTEM AYARLARI ===
-    // Mobil Menü Aç/Kapat
+    // === 1. MENÜ VE ÇIKIŞ İŞLEMLERİ ===
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.querySelector('.sidebar');
-    
     if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-        });
+        menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
     }
-
-    // Çıkış Yap
     const logoutBtn = document.getElementById('logoutBtn');
     if(logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
@@ -38,24 +35,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // LOCALSTORAGE GEÇİCİ VERİ TABANI ALTYAPISI
-    let ilanlar = JSON.parse(localStorage.getItem('ilanlar')) || [];
-    let yuklenenFotograflar = [];
-    // === 3. ÇOKLU FOTOĞRAF YÜKLEME VE ÖNİZLEME ===
+    // === 2. FOTOĞRAF YÜKLEME VE ÖNİZLEME (Base64 Formatı) ===
     const photoInput = document.getElementById('photoInput');
     const previewGrid = document.getElementById('previewGrid');
+    let yuklenenFotograflar = []; 
 
     if (photoInput && previewGrid) {
         photoInput.addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
-            
             if (files.length > 20) {
                 alert('En fazla 20 adet fotoğraf yükleyebilirsiniz.');
-                this.value = '';
-                return;
+                this.value = ''; return;
             }
 
-            // Eski önizlemeleri temizle ve garantili görünüm için stilleri JavaScript'ten ver
             previewGrid.innerHTML = ''; 
             previewGrid.style.display = "flex";
             previewGrid.style.flexWrap = "wrap";
@@ -64,10 +56,9 @@ document.addEventListener('DOMContentLoaded', function() {
             yuklenenFotograflar = []; 
 
             if(files.length > 0) {
-                // Yüklendiğine dair yeşil onay yazısı ve ikon
                 const baslik = document.createElement('div');
                 baslik.style = "width: 100%; font-weight: 600; color: #16a34a; margin-bottom: 5px; font-size: 0.95rem;";
-                baslik.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${files.length} fotoğraf başarıyla yüklendi!`;
+                baslik.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${files.length} fotoğraf başarıyla seçildi!`;
                 previewGrid.appendChild(baslik);
             }
 
@@ -75,13 +66,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = function(event) {
-                        // Fotoğrafı küçük şık bir kare (thumbnail) olarak ekrana bas
                         const img = document.createElement('img');
                         img.src = event.target.result;
                         img.style = "width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);";
                         previewGrid.appendChild(img);
-                        
-                        // Fotoğrafı ilan kayıt dizisine gönder
+                        // Storage'a göndermek üzere Base64 verisini kaydet
                         yuklenenFotograflar.push(event.target.result);
                     }
                     reader.readAsDataURL(file);
@@ -89,159 +78,143 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
 
-    // === 4. İLAN KAYDETME VE YAYINLAMA SİSTEMİ ===
+    // === 3. FIREBASE'E İLAN KAYDETME SİSTEMİ ===
     const ilanForm = document.getElementById('ilanForm');
     if (ilanForm) {
-        ilanForm.addEventListener('submit', function(e) {
+        ilanForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İlan Buluta Yükleniyor... (Lütfen Bekleyin)';
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.7";
 
-            // Formdaki tüm verileri toplayıp paket haline getiriyoruz
-            const yeniIlan = {
-                id: Math.floor(100000 + Math.random() * 900000), // Rastgele İlan Numarası
-                baslik: document.getElementById('ilanBaslik').value,
-                fiyat: document.getElementById('ilanFiyat').value,
-                kategori: document.getElementById('ilanKategori').value,
-                sahibi: document.getElementById('ilanSahibi').value,
-                telefon: document.getElementById('ilanTelefon').value,
-                gizlilik: document.getElementById('ilanGizlilik').value,
-                aciklama: document.getElementById('ilanAciklama').value,
-                tarih: new Date().toLocaleDateString('tr-TR'),
-                durum: 'Aktif',
-                gorseller: yuklenenFotograflar.length > 0 ? yuklenenFotograflar : ['https://via.placeholder.com/150?text=G%C3%B6rsel+Yok']
-            };
+            try {
+                let resimLinkleri = [];
+                // 1. Önce Fotoğrafları Firebase Storage'a Yükle
+                if (yuklenenFotograflar.length > 0) {
+                    for (let i = 0; i < yuklenenFotograflar.length; i++) {
+                        const base64Data = yuklenenFotograflar[i];
+                        const fotoPath = `ilan-fotograflari/foto_${Date.now()}_${i}.jpg`;
+                        const fotoRef = ref(storage, fotoPath);
+                        
+                        await uploadString(fotoRef, base64Data, 'data_url');
+                        const url = await getDownloadURL(fotoRef);
+                        resimLinkleri.push(url);
+                    }
+                } else {
+                    resimLinkleri.push('https://via.placeholder.com/150?text=G%C3%B6rsel+Yok');
+                }
 
-            // Paketi veri tabanına (tarayıcıya) fırlat
-            ilanlar.push(yeniIlan);
-            localStorage.setItem('ilanlar', JSON.stringify(ilanlar));
+                // 2. Fotoğraf Linkleriyle Birlikte İlan Verisini Firestore'a Kaydet
+                const yeniIlan = {
+                    id: Math.floor(100000 + Math.random() * 900000),
+                    baslik: document.getElementById('ilanBaslik').value,
+                    fiyat: document.getElementById('ilanFiyat').value,
+                    kategori: document.getElementById('ilanKategori').value,
+                    sahibi: document.getElementById('ilanSahibi').value,
+                    telefon: document.getElementById('ilanTelefon').value,
+                    gizlilik: document.getElementById('ilanGizlilik').value,
+                    aciklama: document.getElementById('ilanAciklama').value,
+                    tarih: new Date().toLocaleDateString('tr-TR'),
+                    durum: 'Aktif',
+                    gorseller: resimLinkleri
+                };
 
-            alert('İlan başarıyla kaydedildi ve listenize eklendi!');
-            window.location.href = 'ilanlar.html'; // İlanların olduğu listeye uçur
+                await addDoc(collection(db, "ilanlar"), yeniIlan);
+                
+                alert('İlan başarıyla Firebase Veritabanına eklendi!');
+                window.location.href = 'ilanlar.html';
+                
+            } catch (error) {
+                console.error("Firebase Yükleme Hatası:", error);
+                alert("Hata oluştu! Veritabanı okuma/yazma izinlerinizi kontrol edin. Hata kodu: " + error.message);
+                submitBtn.innerHTML = 'İlanı Kaydet ve Yayınla';
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+            }
         });
     }
 
-    // === 5. VERİLERİ PANELDE GÖSTERME (DİNAMİK DAMARLAR) ===
-    function istatistikleriGuncelle() {
+    // === 4. FIREBASE'DEN İLANLARI ÇEKME VE LİSTELEME ===
+    let ilanlar = [];
+    async function verileriGetir() {
+        try {
+            const querySnapshot = await getDocs(collection(db, "ilanlar"));
+            ilanlar = [];
+            querySnapshot.forEach((doc) => {
+                // Her ilanın özel Firebase ID'sini de (docId) siliş işlemleri için alıyoruz
+                ilanlar.push({ ...doc.data(), docId: doc.id });
+            });
+            
+            arayuzuGuncelle();
+        } catch (error) {
+            console.error("İlanlar çekilirken hata:", error);
+        }
+    }
+
+    function arayuzuGuncelle() {
+        // İstatistikleri Güncelle
         const statCards = document.querySelectorAll('.stat-info h3');
         if (statCards.length >= 4) {
-            statCards[0].textContent = ilanlar.length; // Toplam İlan Sayısı
-            
-            // Simüle edilmiş toplam izlenme sayısı
-            let toplamIzlenme = ilanlar.length * 27; 
-            statCards[1].textContent = toplamIzlenme;
-            
-            // Kaç farklı kullanıcı ilan eklediyse say
-            let benzersizKullanicilar = new Set(ilanlar.map(i => i.sahibi)).size;
-            statCards[2].textContent = benzersizKullanicilar;
-            
-            statCards[3].textContent = "0"; // Bekleyen Mesaj
+            statCards[0].textContent = ilanlar.length;
+            statCards[1].textContent = ilanlar.length * 45; // Görüntülenme (Temsili)
+            statCards[2].textContent = new Set(ilanlar.map(i => i.sahibi)).size;
+            statCards[3].textContent = "0";
+        }
+
+        // Tabloları Doldur
+        const tabloHTML = (ilan) => {
+            let durumClass = ilan.durum === 'Pasif' ? 'status-passive' : (ilan.durum === 'Beklemede' ? 'status-pending' : 'status-active');
+            return `
+                <tr>
+                    <td><img src="${ilan.gorseller[0]}" alt="Foto" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;"></td>
+                    <td><strong>#${ilan.id}</strong> - ${ilan.baslik}</td>
+                    <td><span style="color: var(--text-light); font-size: 0.9rem;">${ilan.kategori}</span></td>
+                    <td style="font-weight: 600; color: var(--secondary);">${parseFloat(ilan.fiyat).toLocaleString('tr-TR')} ₺</td>
+                    <td>${ilan.tarih}</td>
+                    <td><span class="badge-status ${durumClass}">${ilan.durum}</span></td>
+                    <td>
+                        <button class="btn-sil" data-docid="${ilan.docId}" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.1rem;" title="Kalıcı Olarak Sil"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        };
+
+        const ilanlarTable = document.getElementById('ilanlarTable'); // Dashboard (Son 3 ilan)
+        if (ilanlarTable && ilanlar.length > 0) {
+            ilanlarTable.innerHTML = ilanlar.map(ilan => tabloHTML(ilan)).slice(0, 3).join('');
+        }
+
+        const tumIlanlarTable = document.getElementById('tumIlanlarTable'); // İlanlar sayfası
+        if (tumIlanlarTable && ilanlar.length > 0) {
+            tumIlanlarTable.innerHTML = ilanlar.map(ilan => tabloHTML(ilan)).join('');
+        }
+
+        // Grafikleri Güncelle (Sadece Dashboard'da varsa)
+        if(window.Chart && document.getElementById('donutChart')) {
+            // Basit bir sayım animasyonu ekleyebilirsiniz, şimdilik grafikler eski taslaktaki gibi kalsın istiyorsan buraya o kodlar gelebilir.
         }
     }
 
-        // HTML Tablo Satırı Oluşturucu Şablon (Kalem butonu eklendi)
-    function tabloSatiriOlustur(ilan) {
-        let durumClass = 'status-active';
-        if (ilan.durum === 'Pasif') durumClass = 'status-passive';
-        if (ilan.durum === 'Beklemede') durumClass = 'status-pending';
-
-        return `
-            <tr>
-                <td><img src="${ilan.gorseller[0]}" alt="Foto" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;"></td>
-                <td><strong>#${ilan.id}</strong> - ${ilan.baslik}</td>
-                <td><span style="color: var(--text-light); font-size: 0.9rem;">${ilan.kategori}</span></td>
-                <td style="font-weight: 600; color: var(--secondary);">${parseFloat(ilan.fiyat).toLocaleString('tr-TR')} ₺</td>
-                <td>${ilan.tarih}</td>
-                <td><span class="badge-status ${durumClass}">${ilan.durum}</span></td>
-                <td>
-                    <button class="btn-duzenle" data-id="${ilan.id}" style="background: none; border: none; color: #0284c7; cursor: pointer; font-size: 1.1rem; margin-right: 12px;" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
-                    
-                    <button class="btn-sil" data-id="${ilan.id}" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.1rem;" title="Sil"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            </tr>
-        `;
-    }
-
-    // Dashboard Ana Sayfa Tablosu (Son Eklenen 3 İlanı Göster)
-    const ilanlarTable = document.getElementById('ilanlarTable');
-    if (ilanlarTable && ilanlar.length > 0) {
-        ilanlarTable.innerHTML = '';
-        const sonIlanlar = [...ilanlar].reverse().slice(0, 3);
-        sonIlanlar.forEach(ilan => {
-            ilanlarTable.innerHTML += tabloSatiriOlustur(ilan);
-        });
-    }
-
-    // Tüm İlanlar Sayfası Tablosu (Fiziksel Olarak Eklediğin Tüm İlanlar)
-    const tumIlanlarTable = document.getElementById('tumIlanlarTable');
-    if (tumIlanlarTable && ilanlar.length > 0) {
-        tumIlanlarTable.innerHTML = '';
-        [...ilanlar].reverse().forEach(ilan => {
-            tumIlanlarTable.innerHTML += tabloSatiriOlustur(ilan);
-        });
-    }
-
-        // İlan Düzenleme (Kalem) Tetikleyicisi
-    document.addEventListener('click', function(e) {
-        const duzenleBtn = e.target.closest('.btn-duzenle');
-        if (duzenleBtn) {
-            const id = duzenleBtn.getAttribute('data-id');
-            // Şimdilik sistemin tıklandığını anlamamız için bir uyarı veriyoruz
-            alert('İlan Düzenleme Modu: #' + id + ' numaralı ilan seçildi. Gerçek düzenleme ekranı ve veritabanı senkronizasyonu Firebase aşamasında tam aktif olacak!');
-        }
-    });
-    
-    document.addEventListener('click', function(e) {
+    // İlan Silme (Firebase'den kalıcı siler)
+    document.addEventListener('click', async function(e) {
         if (e.target.closest('.btn-sil')) {
-            if (confirm('Bu ilanı silmek istediğinize emin misiniz?')) {
-                const id = e.target.closest('.btn-sil').getAttribute('data-id');
-                ilanlar = ilanlar.filter(ilan => ilan.id != id);
-                localStorage.setItem('ilanlar', JSON.stringify(ilanlar));
-                window.location.reload();
+            if (confirm('DİKKAT: Bu ilan Firebase veritabanından kalıcı olarak silinecek. Emin misiniz?')) {
+                const btn = e.target.closest('.btn-sil');
+                const docId = btn.getAttribute('data-docid');
+                
+                try {
+                    await deleteDoc(doc(db, "ilanlar", docId));
+                    window.location.reload(); // Silince sayfayı yenile
+                } catch (error) {
+                    alert("Silinirken hata oluştu: " + error.message);
+                }
             }
         }
     });
 
-    // İstatistik rakamlarını açılışta güncelle
-    istatistikleriGuncelle();
-
-    // === 6. GRAFİKLERİ GERÇEK VERİYE BAĞLAMA ===
-    const lineCtx = document.getElementById('lineChart');
-    const donutCtx = document.getElementById('donutChart');
-
-    if (lineCtx && donutCtx) {
-        let aktifSayisi = ilanlar.filter(i => i.durum === 'Aktif').length;
-        let pasifSayisi = ilanlar.filter(i => i.durum === 'Pasif').length;
-        let beklemeSayisi = ilanlar.filter(i => i.durum === 'Beklemede').length;
-
-        new Chart(lineCtx, {
-            type: 'line',
-            data: {
-                labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
-                datasets: [{
-                    label: 'İlan Akışı',
-                    data: [ilanlar.length, 0, 0, 0, 0, 0, 0],
-                    borderColor: '#ef233c',
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: 'rgba(239, 35, 60, 0.1)'
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        new Chart(donutCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Aktif', 'Pasif', 'Beklemede'],
-                datasets: [{
-                    data: [aktifSayisi, pasifSayisi, beklemeSayisi],
-                    backgroundColor: ['#16a34a', '#ea580c', '#64748b'],
-                    borderWidth: 0
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
-        });
-    }
+    // Sayfa açıldığında verileri Firebase'den çekmeye başla
+    verileriGetir();
 });
-    
