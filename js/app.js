@@ -190,15 +190,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function arayuzuGuncelle() {
+        function arayuzuGuncelle() {
+        // İstatistikleri Güncelle (45 sahte izlenmeyi 0 yaptık)
         const statCards = document.querySelectorAll('.stat-info h3');
         if (statCards.length >= 4) {
             statCards[0].textContent = ilanlar.length;
-            statCards[1].textContent = ilanlar.length * 45; 
+            statCards[1].textContent = "0"; // Görüntülenme artık gerçekçi olarak 0 başlıyor
             statCards[2].textContent = new Set(ilanlar.map(i => i.sahibi)).size;
             statCards[3].textContent = "0";
         }
 
+        // Tablo Satırı Şablonu (Kalem butonu geri eklendi)
         const tabloHTML = (ilan) => {
             let durumClass = ilan.durum === 'Pasif' ? 'status-passive' : (ilan.durum === 'Beklemede' ? 'status-pending' : 'status-active');
             return `
@@ -210,12 +212,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${ilan.tarih}</td>
                     <td><span class="badge-status ${durumClass}">${ilan.durum}</span></td>
                     <td>
-                        <button class="btn-sil" data-docid="${ilan.docId}" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.1rem;" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn-duzenle" data-id="${ilan.id}" data-docid="${ilan.docId}" style="background: none; border: none; color: #0284c7; cursor: pointer; font-size: 1.1rem; margin-right: 12px;" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-sil" data-docid="${ilan.docId}" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.1rem;" title="Kalıcı Olarak Sil"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `;
         };
 
+        // Tabloları Doldur
         const ilanlarTable = document.getElementById('ilanlarTable'); 
         if (ilanlarTable && ilanlar.length > 0) {
             ilanlarTable.innerHTML = ilanlar.map(ilan => tabloHTML(ilan)).slice(0, 3).join('');
@@ -225,22 +229,52 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tumIlanlarTable && ilanlar.length > 0) {
             tumIlanlarTable.innerHTML = ilanlar.map(ilan => tabloHTML(ilan)).join('');
         }
-    }
 
-    document.addEventListener('click', async function(e) {
-        if (e.target.closest('.btn-sil')) {
-            if (confirm('DİKKAT: Bu ilan veritabanından kalıcı olarak silinecek. Emin misiniz?')) {
-                const btn = e.target.closest('.btn-sil');
-                const docId = btn.getAttribute('data-docid');
-                try {
-                    await deleteDoc(doc(db, "ilanlar", docId));
-                    window.location.reload(); 
-                } catch (error) {
-                    alert("Silinirken hata oluştu: " + error.message);
-                }
-            }
+        // --- KAYBOLAN GRAFİKLERİ GERİ GETİRME ---
+        const lineCtx = document.getElementById('lineChart');
+        const donutCtx = document.getElementById('donutChart');
+
+        if (lineCtx && donutCtx && window.Chart) {
+            let aktifSayisi = ilanlar.filter(i => i.durum === 'Aktif').length;
+            let pasifSayisi = ilanlar.filter(i => i.durum === 'Pasif').length;
+            let beklemeSayisi = ilanlar.filter(i => i.durum === 'Beklemede').length;
+
+            // Eski grafikleri temizle (üzerine yazıp sayfayı dondurmaması için)
+            let chartStatus1 = Chart.getChart("lineChart");
+            if (chartStatus1 != undefined) chartStatus1.destroy();
+            let chartStatus2 = Chart.getChart("donutChart");
+            if (chartStatus2 != undefined) chartStatus2.destroy();
+
+            // Çizgi Grafik (Haftalık İlan Ekleme)
+            new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+                    datasets: [{
+                        label: 'İlan Akışı',
+                        data: [ilanlar.length, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#ef233c',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(239, 35, 60, 0.1)'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Yuvarlak Grafik (İlan Durumları)
+            new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Aktif', 'Pasif', 'Beklemede'],
+                    datasets: [{
+                        data: [aktifSayisi, pasifSayisi, beklemeSayisi],
+                        backgroundColor: ['#16a34a', '#ea580c', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
+            });
         }
-    });
-
-    verileriGetir();
-});
+        }
+  
