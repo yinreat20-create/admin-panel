@@ -277,4 +277,35 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         }
+      // ... (yukarıdaki diğer kodlar) ...
+
+    // === 5. İLAN SİLME VE DÜZENLEME TETİKLEYİCİLERİ ===
+    document.addEventListener('click', async function(e) {
+        
+        // 1. Silme (Çöp Kutusu) İşlemi
+        if (e.target.closest('.btn-sil')) {
+            if (confirm('DİKKAT: Bu ilan veritabanından kalıcı olarak silinecek. Emin misiniz?')) {
+                const btn = e.target.closest('.btn-sil');
+                const docId = btn.getAttribute('data-docid');
+                try {
+                    await deleteDoc(doc(db, "ilanlar", docId));
+                    window.location.reload(); 
+                } catch (error) {
+                    alert("Silinirken hata oluştu: " + error.message);
+                }
+            }
+        }
+
+        // 2. Düzenleme (Kalem) İşlemi
+        const duzenleBtn = e.target.closest('.btn-duzenle');
+        if (duzenleBtn) {
+            const id = duzenleBtn.getAttribute('data-id');
+            alert('İlan Düzenleme Modu: #' + id + ' numaralı ilan seçildi. İleride güncelleme paneli buraya bağlanacak.');
+        }
+    });
+
+    // Sayfa açıldığında verileri Firebase'den çekmeye başla
+    verileriGetir();
+});
+
   
