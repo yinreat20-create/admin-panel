@@ -1,10 +1,10 @@
-// Firebase v9 Modüler SDK Kurulumu (Sadece Veritabanı ve Giriş İçin)
+// Firebase v9 Modüler SDK Kurulumu
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // === IMGBB API ANAHTARIN (FOTOĞRAFLAR İÇİN) ===
-const IMGBB_API_KEY = "b6f5845f545e78a614430a279733ae4c";
+const IMGBB_API_KEY = "b6f5845f545e78a614430a279733ae4c"; 
 
 // Firebase Kimlik Bilgilerin
 const firebaseConfig = {
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // === 2. FOTOĞRAF YÜKLEME VE ÖNİZLEME (BASE64) ===
+    // === 2. FOTOĞRAF YÜKLEME ÖNİZLEMESİ ===
     const photoInput = document.getElementById('photoInput');
     const previewGrid = document.getElementById('previewGrid');
     let yuklenenFotograflar = []; 
@@ -98,8 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         img.src = event.target.result;
                         img.style = "width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);";
                         previewGrid.appendChild(img);
-                        
-                        // ImgBB için sadece Base64 veri kısmını alıyoruz
                         const base64Verisi = event.target.result.split(',')[1];
                         yuklenenFotograflar.push(base64Verisi);
                     }
@@ -109,21 +107,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // === 3. İLAN KAYDETME (IMGBB + FIREBASE FIRESTORE) ===
+    // === 3. İLAN EKLEME VE DÜZENLEME SİSTEMİ ===
     const ilanForm = document.getElementById('ilanForm');
+    const urlParams = new URLSearchParams(window.location.search);
+    const editDocId = urlParams.get('edit'); // Linkte edit ID'si var mı bakıyoruz
+    let eskiGorseller = [];
+
+    // Eğer Düzenleme Modundaysak Verileri Çekip Kutulara Doldur
+    if (ilanForm && editDocId) {
+        document.querySelector('.page-title').innerHTML = '<i class="fa-solid fa-pen"></i> İlanı Düzenle';
+        const submitBtn = ilanForm.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = 'Değişiklikleri Kaydet';
+
+        getDoc(doc(db, "ilanlar", editDocId)).then(docSnap => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('ilanBaslik').value = data.baslik;
+                document.getElementById('ilanFiyat').value = data.fiyat;
+                document.getElementById('ilanKategori').value = data.kategori;
+                document.getElementById('ilanSahibi').value = data.sahibi;
+                document.getElementById('ilanTelefon').value = data.telefon;
+                document.getElementById('ilanGizlilik').value = data.gizlilik;
+                document.getElementById('ilanAciklama').value = data.aciklama;
+                eskiGorseller = data.gorseller || [];
+            }
+        });
+    }
+
+    // Formu Gönderme (Ekleme veya Güncelleme)
     if (ilanForm) {
         ilanForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fotoğraflar Yükleniyor... (Lütfen Bekleyin)';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşlem Yapılıyor...';
             submitBtn.disabled = true;
             submitBtn.style.opacity = "0.7";
 
             try {
                 let resimLinkleri = [];
                 
-                // 1. Önce Fotoğrafları ImgBB'ye Yükle
+                // 1. Yeni Fotoğraf Seçildiyse ImgBB'ye Yükle
                 if (yuklenenFotograflar.length > 0) {
                     for (let i = 0; i < yuklenenFotograflar.length; i++) {
                         const formData = new FormData();
@@ -134,20 +158,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             body: formData
                         });
                         const data = await response.json();
-                        
                         if(data.success) {
-                            resimLinkleri.push(data.data.url); // ImgBB'nin verdiği kalıcı linki kaydet
+                            resimLinkleri.push(data.data.url); 
                         }
                     }
                 } else {
-                    resimLinkleri.push('https://via.placeholder.com/150?text=G%C3%B6rsel+Yok');
+                    // Fotoğraf seçilmediyse ve düzenlemedeysek eskisini koru, yeni ilansa boş at
+                    resimLinkleri = editDocId ? eskiGorseller : ['https://via.placeholder.com/150?text=G%C3%B6rsel+Yok'];
                 }
 
                 submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Veritabanına Yazılıyor...';
 
-                // 2. İlan Verisini Firebase'e Kaydet
-                const yeniIlan = {
-                    id: Math.floor(100000 + Math.random() * 900000),
+                // 2. İlan Veri Paketini Hazırla
+                const ilanVerisi = {
                     baslik: document.getElementById('ilanBaslik').value,
                     fiyat: document.getElementById('ilanFiyat').value,
                     kategori: document.getElementById('ilanKategori').value,
@@ -155,20 +178,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     telefon: document.getElementById('ilanTelefon').value,
                     gizlilik: document.getElementById('ilanGizlilik').value,
                     aciklama: document.getElementById('ilanAciklama').value,
-                    tarih: new Date().toLocaleDateString('tr-TR'),
-                    durum: 'Aktif',
                     gorseller: resimLinkleri
                 };
 
-                await addDoc(collection(db, "ilanlar"), yeniIlan);
-                
-                alert('İlan başarıyla eklendi ve yayına alındı!');
+                // 3. Mod Kontrolü: Ekleme mi Güncelleme mi?
+                if (editDocId) {
+                    // Firebase Güncelleme İşlemi
+                    await updateDoc(doc(db, "ilanlar", editDocId), ilanVerisi);
+                    alert('İlan başarıyla güncellendi!');
+                } else {
+                    // Firebase Yeni Kayıt İşlemi
+                    ilanVerisi.id = Math.floor(100000 + Math.random() * 900000);
+                    ilanVerisi.tarih = new Date().toLocaleDateString('tr-TR');
+                    ilanVerisi.durum = 'Aktif';
+                    await addDoc(collection(db, "ilanlar"), ilanVerisi);
+                    alert('İlan başarıyla eklendi ve yayına alındı!');
+                }
+
                 window.location.href = 'ilanlar.html';
                 
             } catch (error) {
                 console.error("Yükleme Hatası:", error);
                 alert("Hata oluştu! " + error.message);
-                submitBtn.innerHTML = 'İlanı Kaydet ve Yayınla';
+                submitBtn.innerHTML = editDocId ? 'Değişiklikleri Kaydet' : 'İlanı Kaydet ve Yayınla';
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = "1";
             }
@@ -190,17 +222,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-        function arayuzuGuncelle() {
-        // İstatistikleri Güncelle (45 sahte izlenmeyi 0 yaptık)
+    function arayuzuGuncelle() {
         const statCards = document.querySelectorAll('.stat-info h3');
         if (statCards.length >= 4) {
             statCards[0].textContent = ilanlar.length;
-            statCards[1].textContent = "0"; // Görüntülenme artık gerçekçi olarak 0 başlıyor
+            statCards[1].textContent = "0"; 
             statCards[2].textContent = new Set(ilanlar.map(i => i.sahibi)).size;
             statCards[3].textContent = "0";
         }
 
-        // Tablo Satırı Şablonu (Kalem butonu geri eklendi)
         const tabloHTML = (ilan) => {
             let durumClass = ilan.durum === 'Pasif' ? 'status-passive' : (ilan.durum === 'Beklemede' ? 'status-pending' : 'status-active');
             return `
@@ -213,13 +243,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td><span class="badge-status ${durumClass}">${ilan.durum}</span></td>
                     <td>
                         <button class="btn-duzenle" data-id="${ilan.id}" data-docid="${ilan.docId}" style="background: none; border: none; color: #0284c7; cursor: pointer; font-size: 1.1rem; margin-right: 12px;" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn-sil" data-docid="${ilan.docId}" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.1rem;" title="Kalıcı Olarak Sil"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn-sil" data-docid="${ilan.docId}" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.1rem;" title="Sil"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `;
         };
 
-        // Tabloları Doldur
         const ilanlarTable = document.getElementById('ilanlarTable'); 
         if (ilanlarTable && ilanlar.length > 0) {
             ilanlarTable.innerHTML = ilanlar.map(ilan => tabloHTML(ilan)).slice(0, 3).join('');
@@ -230,59 +259,33 @@ document.addEventListener('DOMContentLoaded', function() {
             tumIlanlarTable.innerHTML = ilanlar.map(ilan => tabloHTML(ilan)).join('');
         }
 
-        // --- KAYBOLAN GRAFİKLERİ GERİ GETİRME ---
         const lineCtx = document.getElementById('lineChart');
         const donutCtx = document.getElementById('donutChart');
-
         if (lineCtx && donutCtx && window.Chart) {
             let aktifSayisi = ilanlar.filter(i => i.durum === 'Aktif').length;
             let pasifSayisi = ilanlar.filter(i => i.durum === 'Pasif').length;
             let beklemeSayisi = ilanlar.filter(i => i.durum === 'Beklemede').length;
-
-            // Eski grafikleri temizle (üzerine yazıp sayfayı dondurmaması için)
             let chartStatus1 = Chart.getChart("lineChart");
             if (chartStatus1 != undefined) chartStatus1.destroy();
             let chartStatus2 = Chart.getChart("donutChart");
             if (chartStatus2 != undefined) chartStatus2.destroy();
 
-            // Çizgi Grafik (Haftalık İlan Ekleme)
             new Chart(lineCtx, {
                 type: 'line',
-                data: {
-                    labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
-                    datasets: [{
-                        label: 'İlan Akışı',
-                        data: [ilanlar.length, 0, 0, 0, 0, 0, 0],
-                        borderColor: '#ef233c',
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: 'rgba(239, 35, 60, 0.1)'
-                    }]
-                },
+                data: { labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'], datasets: [{ label: 'İlan Akışı', data: [ilanlar.length, 0, 0, 0, 0, 0, 0], borderColor: '#ef233c', tension: 0.4, fill: true, backgroundColor: 'rgba(239, 35, 60, 0.1)' }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
-
-            // Yuvarlak Grafik (İlan Durumları)
             new Chart(donutCtx, {
                 type: 'doughnut',
-                data: {
-                    labels: ['Aktif', 'Pasif', 'Beklemede'],
-                    datasets: [{
-                        data: [aktifSayisi, pasifSayisi, beklemeSayisi],
-                        backgroundColor: ['#16a34a', '#ea580c', '#64748b'],
-                        borderWidth: 0
-                    }]
-                },
+                data: { labels: ['Aktif', 'Pasif', 'Beklemede'], datasets: [{ data: [aktifSayisi, pasifSayisi, beklemeSayisi], backgroundColor: ['#16a34a', '#ea580c', '#64748b'], borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
             });
         }
-        }
-      // ... (yukarıdaki diğer kodlar) ...
+    }
 
-    // === 5. İLAN SİLME VE DÜZENLEME TETİKLEYİCİLERİ ===
+    // === 5. SİLME VE DÜZENLEME TETİKLEYİCİLERİ ===
     document.addEventListener('click', async function(e) {
-        
-        // 1. Silme (Çöp Kutusu) İşlemi
+        // Silme İşlemi
         if (e.target.closest('.btn-sil')) {
             if (confirm('DİKKAT: Bu ilan veritabanından kalıcı olarak silinecek. Emin misiniz?')) {
                 const btn = e.target.closest('.btn-sil');
@@ -295,17 +298,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-
-        // 2. Düzenleme (Kalem) İşlemi
+        
+        // Düzenleme İşlemi (İlan Ekle sayfasına yönlendirir)
         const duzenleBtn = e.target.closest('.btn-duzenle');
         if (duzenleBtn) {
-            const id = duzenleBtn.getAttribute('data-id');
-            alert('İlan Düzenleme Modu: #' + id + ' numaralı ilan seçildi. İleride güncelleme paneli buraya bağlanacak.');
+            const docId = duzenleBtn.getAttribute('data-docid');
+            // İlan ekle sayfasını 'edit' modunda aç
+            window.location.href = `ilan-ekle.html?edit=${docId}`;
         }
     });
 
-    // Sayfa açıldığında verileri Firebase'den çekmeye başla
     verileriGetir();
 });
-
-  
+                  
