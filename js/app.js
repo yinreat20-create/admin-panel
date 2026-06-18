@@ -181,7 +181,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // İlan Silme Tetikleyicisi
+        // İlan Düzenleme (Kalem) Tetikleyicisi
+    document.addEventListener('click', function(e) {
+        const duzenleBtn = e.target.closest('.btn-duzenle');
+        if (duzenleBtn) {
+            const id = duzenleBtn.getAttribute('data-id');
+            // Şimdilik sistemin tıklandığını anlamamız için bir uyarı veriyoruz
+            alert('İlan Düzenleme Modu: #' + id + ' numaralı ilan seçildi. Gerçek düzenleme ekranı ve veritabanı senkronizasyonu Firebase aşamasında tam aktif olacak!');
+        }
+    });
+    
     document.addEventListener('click', function(e) {
         if (e.target.closest('.btn-sil')) {
             if (confirm('Bu ilanı silmek istediğinize emin misiniz?')) {
